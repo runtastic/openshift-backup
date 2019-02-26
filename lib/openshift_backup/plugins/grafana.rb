@@ -1,5 +1,5 @@
-module KubeBackup; end
-module KubeBackup::Plugins
+module OpenshiftBackup; end
+module OpenshiftBackup::Plugins
 
   class Grafana
 
@@ -13,7 +13,7 @@ module KubeBackup::Plugins
 
     def run
       if !@grafana_url || @grafana_url == ''
-        KubeBackup.logger.info "Skip Grafana plugin"
+        OpenshiftBackup.logger.info "Skip Grafana plugin"
         return
       end
 
@@ -23,7 +23,7 @@ module KubeBackup::Plugins
       backup_org
       backup_org_users
     rescue FetchError => error
-      KubeBackup.logger.error("#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}")
+      OpenshiftBackup.logger.error("#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}")
       @writter.restore("_grafana_")
     end
 
@@ -35,7 +35,7 @@ module KubeBackup::Plugins
         if dashboard['type'] == "dash-db" || dashboard['type'] == "dash-folder"
           dash_name = dashboard['uri'].sub(%r{^db/}, '')
 
-          KubeBackup.logger.info "Saving dashboard #{dashboard['folderTitle']}/#{dash_name}"
+          OpenshiftBackup.logger.info "Saving dashboard #{dashboard['folderTitle']}/#{dash_name}"
 
           dashboard_json = get_json("/api/dashboards/#{dashboard['uri']}")
 
@@ -57,7 +57,7 @@ module KubeBackup::Plugins
       #puts JSON.pretty_generate(datasources)
 
       datasources.each do |datasource|
-        KubeBackup.logger.info "Saving datasource #{datasource['name']}"
+        OpenshiftBackup.logger.info "Saving datasource #{datasource['name']}"
         @writter.write_raw("_grafana_/datasources/#{datasource['name']}.json", JSON.pretty_generate(datasource))
       end
     end
@@ -66,7 +66,7 @@ module KubeBackup::Plugins
       settings = get_json('/api/frontend/settings')
       #puts JSON.pretty_generate(settings)
 
-      KubeBackup.logger.info "Saving frontend_settings"
+      OpenshiftBackup.logger.info "Saving frontend_settings"
       @writter.write_raw("_grafana_/frontend_settings.json", JSON.pretty_generate(settings))
     end
 
@@ -74,7 +74,7 @@ module KubeBackup::Plugins
       org = get_json('/api/org')
       #puts JSON.pretty_generate(users)
 
-      KubeBackup.logger.info "Saving organization"
+      OpenshiftBackup.logger.info "Saving organization"
       @writter.write_raw("_grafana_/org.json", JSON.pretty_generate(org))
     end
 
@@ -83,7 +83,7 @@ module KubeBackup::Plugins
       #puts JSON.pretty_generate(users)
 
       users.each do |user|
-        KubeBackup.logger.info "Saving user #{user['login']}"
+        OpenshiftBackup.logger.info "Saving user #{user['login']}"
         user.delete('lastSeenAtAge')
         user.delete('lastSeenAt')
         @writter.write_raw("_grafana_/users/#{user['login']}.json", JSON.pretty_generate(user))
@@ -95,7 +95,7 @@ module KubeBackup::Plugins
       require 'excon'
 
       url = @grafana_url + path
-      KubeBackup.logger.debug "GET #{url}"
+      OpenshiftBackup.logger.debug "GET #{url}"
 
       response = Excon.get(@grafana_url + path, {
         headers: {

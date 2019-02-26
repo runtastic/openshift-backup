@@ -1,4 +1,4 @@
-module KubeBackup
+module OpenshiftBackup
   module LogUtil
     extend self
 

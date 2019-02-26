@@ -1,19 +1,19 @@
-require_relative './kube_backup/version'
-require_relative './kube_backup/cmd_utils'
-require_relative './kube_backup/log_util'
-require_relative './kube_backup/writter'
-require_relative './kube_backup/logger'
-require_relative './kube_backup/plugins/grafana'
+require_relative './openshift_backup/version'
+require_relative './openshift_backup/cmd_utils'
+require_relative './openshift_backup/log_util'
+require_relative './openshift_backup/writter'
+require_relative './openshift_backup/logger'
+require_relative './openshift_backup/plugins/grafana'
 
 require 'json'
 require 'yaml'
 require 'colorize'
 
-module KubeBackup
+module OpenshiftBackup
   module Plugins; end
 
-  extend KubeBackup::CmdUtils
-  extend KubeBackup::Logger
+  extend OpenshiftBackup::CmdUtils
+  extend OpenshiftBackup::Logger
 
   GLOBAL_TYPES = [
     :node,
@@ -26,10 +26,11 @@ module KubeBackup
     :customresourcedefinition,
     :mutatingwebhookconfiguration,
     :validatingwebhookconfiguration,
-    :priorityclass
+    :priorityclass,
+    :project
   ].freeze
 
-  TYPES = [
+  K8S_TYPES = [
     :serviceaccount,
     :secret,
     :deployment,
@@ -47,6 +48,16 @@ module KubeBackup
     :resourcequota,
     :horizontalpodautoscaler
   ].freeze
+
+  OPENSHIFT_TYPES = [
+    :buildconfig,
+    :deploymentconfig,
+    :imagestream,
+    :route,
+    :template
+  ].freeze
+
+  TYPES = (K8S_TYPES + OPENSHIFT_TYPES).freeze
 
   SKIP_POD_OWNERS = [
     "DaemonSet",
@@ -98,7 +109,7 @@ module KubeBackup
     writter.init_repo!
 
     global_types.each do |type|
-      resources = kubectl(:get, type)
+      resources = oc(:get, type)
       puts "Got #{resources["items"].size} #{type}s"
 
       resources["items"].each do |item|
@@ -115,7 +126,7 @@ module KubeBackup
     end
 
     types.each do |type|
-      resources = kubectl(:get, type, "all-namespaces" => nil)
+      resources = oc(:get, type, "all-namespaces" => nil)
       puts "Got #{resources["items"].size} #{type}s"
 
       if !resources["items"]
@@ -184,7 +195,7 @@ module KubeBackup
     writter.print_changed_files
   end
 
-  def self.kubectl(command, resource, options = {})
+  def self.oc(command, resource, options = {})
     options[:o] ||= 'json'
 
     args = options.to_a.map do |key, value|
@@ -198,7 +209,7 @@ module KubeBackup
       end
     end.flatten
 
-    res = cmd("kubectl", command, resource, *args, ENV.to_h)
+    res = cmd("oc", command, resource, *args, ENV.to_h)
 
     if !res[:success]
       logger.error res[:stderr]

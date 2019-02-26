@@ -1,7 +1,7 @@
 require 'shellwords'
 require 'open3'
 
-module KubeBackup
+module OpenshiftBackup
   module CmdUtils
     def pipe_stream(from, to, buffer: nil, skip_piping: false)
       thread = Thread.new do
@@ -51,10 +51,10 @@ module KubeBackup
       command = "#{command} #{escaped_args.join(" ")}".strip
 
       #if verbose_logging?
-        KubeBackup.logger.info "RUN #{command.colorize(:green)}"
+        OpenshiftBackup.logger.info "RUN #{command.colorize(:green)}"
       #end
 
-      KubeBackup.logger.debug "ENV #{KubeBackup::LogUtil.hash(modified_env_vars)}" if modified_env_vars.size > 0
+      OpenshiftBackup.logger.debug "ENV #{OpenshiftBackup::LogUtil.hash(modified_env_vars)}" if modified_env_vars.size > 0
 
       stdout_str  = ""
       stderr_str  = ""
@@ -66,12 +66,12 @@ module KubeBackup
       stdout_str, stderr_str, exit_status = Open3.capture3(env_vars, command)
 
       if exit_status != 0
-        KubeBackup.logger.warn "Process #{exit_status.pid} exit with code #{exit_status.exitstatus}"
+        OpenshiftBackup.logger.warn "Process #{exit_status.pid} exit with code #{exit_status.exitstatus}"
       end
 
       # Open3.popen3(env_vars, command) do |stdin, stdout, stderr, wait_thr|
       #   begin
-      #     #if KubeBackup.verbose_logging?
+      #     #if OpenshiftBackup.verbose_logging?
       #     # io_threads << pipe_stream(stdout, STDOUT, buffer: stdout_str)
       #     # io_threads << pipe_stream(stderr, STDERR, buffer: stderr_str)
       #     #else

@@ -1,25 +1,35 @@
-FROM lachlanevenson/k8s-kubectl
+FROM openshift/origin-cli:v3.10
 
-MAINTAINER Pavel Evstigneev <pavel.evst@gmail.com>
+ARG RUBY_INSTALL_VERSION=0.7.0
+ARG RUBY_KIND=ruby
+ARG RUBY_VERSION=2.5.3
 
-RUN apk upgrade --update-cache --available && \
-    apk add curl openssl openssh git bash ruby ruby-bundler ruby-json && \
-    update-ca-certificates && \
-    rm -rf /var/cache/apk/*
+LABEL maintainer="Gabriele Vassallo <gabriele.vassallo@runtastic.com>" \
+      summary="Openshift resource state backup to git"
 
-# https://git.wiki.kernel.org/index.php/GitHosting
-RUN mkdir -p ~/.ssh && \
-    ssh-keyscan -t rsa,dsa github.com gitlab.com bitbucket.org codebasehq.com >> /root/.ssh/known_hosts
+RUN INSTALL_PKGS="curl openssl openssh git bash gcc make automake bzip2 zlib-devel libyaml-devel openssl-devel" && \
+    yum install -y ${INSTALL_PKGS}
 
-RUN mkdir -p /opt/app
 WORKDIR /opt/app
+ADD install-ruby-install.sh /opt/app
+RUN /opt/app/install-ruby-install.sh && rm /opt/app/install-ruby-install.sh
+
+ENV GIT_SERVER="github.com gitlab.com bitbucket.org codebasehq.com" \
+    GIT_SERVER_PORT=22 \
+    PATH=/opt/rubies/$RUBY_KIND-$RUBY_VERSION/bin:/opt/app/bin:$PATH
+
+# Install ruby
+RUN ruby-install --no-install-deps --cleanup $RUBY_KIND $RUBY_VERSION -- --disable-install-rdoc
+RUN gem update --system --silent && \
+    gem install bundler --force
+
+ADD Gemfile Gemfile.lock /opt/app/
+RUN bundle install -j 8
 
 ADD . /opt/app
 
-RUN bundle install --retry 10 --system
-
-ENV PATH $PATH:/opt/app/bin
-
+RUN mkdir -p ~/.ssh/ && \
+    ssh-keyscan -p $GIT_SERVER_PORT -t rsa,dsa $GIT_SERVER >> ~/.ssh/known_hosts
 
 ENTRYPOINT ["sh", "-c"]
-CMD ["kube_backup backup && kube_backup push"]
+CMD ["openshift_backup backup && openshift_backup push"]

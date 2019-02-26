@@ -1,8 +1,8 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: kube-system-backup
-  namespace: kube-backup
+  name: openshift-system-backup
+  namespace: openshift-backup
 spec:
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
@@ -13,10 +13,10 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          serviceAccount: kube-backup-user
+          serviceAccount: openshift-backup-user
           containers:
             - name: backup
-              image: kuberhost/kube-backup
+              image: runtastic/openshift-backup
               imagePullPolicy: Always
               env:
                 - name: BACKUP_VERBOSE
@@ -42,5 +42,5 @@ spec:
           volumes:
             - name: ssh-config
               configMap:
-                name: kube-backup-ssh-config
+                name: openshift-backup-ssh-config
                 defaultMode: 256
