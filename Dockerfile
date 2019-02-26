@@ -14,9 +14,7 @@ WORKDIR /opt/app
 ADD install-ruby-install.sh /opt/app
 RUN /opt/app/install-ruby-install.sh && rm /opt/app/install-ruby-install.sh
 
-ENV GIT_SERVER="github.com gitlab.com bitbucket.org codebasehq.com" \
-    GIT_SERVER_PORT=22 \
-    PATH=/opt/rubies/$RUBY_KIND-$RUBY_VERSION/bin:/opt/app/bin:$PATH
+ENV PATH=/opt/rubies/$RUBY_KIND-$RUBY_VERSION/bin:/opt/app/bin:$PATH
 
 # Install ruby
 RUN ruby-install --no-install-deps --cleanup $RUBY_KIND $RUBY_VERSION -- --disable-install-rdoc
@@ -27,6 +25,9 @@ ADD Gemfile Gemfile.lock /opt/app/
 RUN bundle install -j 8
 
 ADD . /opt/app
+
+ARG GIT_SERVER="github.com gitlab.com bitbucket.org codebasehq.com"
+ARG GIT_SERVER_PORT=22
 
 RUN mkdir -p ~/.ssh/ && \
     ssh-keyscan -p $GIT_SERVER_PORT -t rsa,dsa $GIT_SERVER >> ~/.ssh/known_hosts
