@@ -142,4 +142,20 @@ env:
 
 ---
 
-Special thanks to Pieter Lange for [original idea](https://github.com/pieterlange/kube-backup/)
+## Special thanks
+
+Special thanks to Pieter Lange for [original idea](https://github.com/pieterlange/kube-backup/) and
+to Kuberhost for the [ruby implementation](https://github.com/kuberhost/kube-backup).
+
+## Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/runtastic/openshift-backup
+This project is intended to be a safe, welcoming space for collaboration, and
+contributors are expected to adhere to the [code of conduct][cc].
+
+## License
+
+The repo is available as open source under [the terms of the MIT License][mit].
+
+[mit]: https://choosealicense.com/licenses/mit/
+[cc]: ../CODE_OF_CONDUCT.md
