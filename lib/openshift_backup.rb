@@ -102,8 +102,8 @@ module OpenshiftBackup
       logger.info "Skip Patterns: #{LogUtil.dump(skip_patterns)}"
     end
 
-    skip_namespaces = options[:skip_namespaces] ? options[:skip_namespaces].split(",") : []
-    only_namespaces = options[:only_namespaces] ? options[:only_namespaces].split(",") : nil
+    skip_namespaces = options[:skip_namespaces] ? options[:skip_namespaces].split(",").map(&:strip) : []
+    only_namespaces = options[:only_namespaces] ? options[:only_namespaces].split(",").map(&:strip) : nil
 
     writter = Writter.new(options)
     writter.init_repo!
