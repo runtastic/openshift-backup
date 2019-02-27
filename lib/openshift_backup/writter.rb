@@ -3,7 +3,7 @@ require 'yaml'
 require 'fileutils'
 require 'socket'
 
-module KubeBackup
+module OpenshiftBackup
   class Writter
     def initialize(options = {})
       @options = options
@@ -20,15 +20,15 @@ module KubeBackup
 
     def get_changes
       Dir.chdir(File.join(@target, @git_prefix)) do
-        changes = KubeBackup.cmd(%{git status --porcelain "#{@git_prefix}" --untracked-files=all})
+        changes = OpenshiftBackup.cmd(%{git status --porcelain "#{@git_prefix}" --untracked-files=all})
 
         unless changes[:success]
-          KubeBackup.logger.error changes[:stderr]
+          OpenshiftBackup.logger.error changes[:stderr]
           raise changes[:stderr] || "git status error"
         end
 
         if changes[:stdout] == ''
-          KubeBackup.logger.info "No changes"
+          OpenshiftBackup.logger.info "No changes"
           return false
         else
           puts changes[:stdout]
@@ -50,17 +50,17 @@ module KubeBackup
 
         res = run_cmd! %{git push origin "#{@git_branch}"}
 
-        KubeBackup.logger.error res[:stdout] if res[:stdout] != ''
-        KubeBackup.logger.error res[:stderr] if res[:stderr] != ''
+        OpenshiftBackup.logger.error res[:stdout] if res[:stdout] != ''
+        OpenshiftBackup.logger.error res[:stderr] if res[:stderr] != ''
       end
     end
 
     def run_cmd!(command)
-      res = KubeBackup.cmd(command)
+      res = OpenshiftBackup.cmd(command)
 
       unless res[:success]
-        KubeBackup.logger.error res[:stdout] if res[:stdout] != ''
-        KubeBackup.logger.error res[:stderr] if res[:stderr] != ''
+        OpenshiftBackup.logger.error res[:stdout] if res[:stdout] != ''
+        OpenshiftBackup.logger.error res[:stderr] if res[:stderr] != ''
         raise res[:stderr] || "git command error"
       end
 
@@ -69,11 +69,11 @@ module KubeBackup
 
     def print_changed_files
       Dir.chdir(@target) do
-        res = KubeBackup.cmd(%{git status --porcelain "#{@git_prefix}"})
+        res = OpenshiftBackup.cmd(%{git status --porcelain "#{@git_prefix}"})
         if res[:stdout] == ''
-          KubeBackup.logger.info "No changes"
+          OpenshiftBackup.logger.info "No changes"
         else
-          KubeBackup.logger.info "Changes:\n#{res[:stdout]}"
+          OpenshiftBackup.logger.info "Changes:\n#{res[:stdout]}"
         end
       end
     end
@@ -124,11 +124,11 @@ module KubeBackup
       full_path = File.join(@git_prefix, path)
 
       Dir.chdir(@target) do
-        res = KubeBackup.cmd(%{git checkout -f HEAD -- #{Shellwords.escape(full_path)}})
+        res = OpenshiftBackup.cmd(%{git checkout -f HEAD -- #{Shellwords.escape(full_path)}})
         if res[:success]
-          KubeBackup.logger.info "Restored #{full_path} from HEAD"
+          OpenshiftBackup.logger.info "Restored #{full_path} from HEAD"
         else
-          KubeBackup.logger.error res[:stderr]
+          OpenshiftBackup.logger.error res[:stderr]
           raise res[:stderr] || "git reset error"
         end
       end
@@ -149,11 +149,11 @@ module KubeBackup
     def clone_repo!
       check_known_hosts!
 
-      res = KubeBackup.cmd(%{git clone -b "#{@git_branch}" --depth 10 "#{@git_url}" "#{@target}"})
+      res = OpenshiftBackup.cmd(%{git clone -b "#{@git_branch}" --depth 10 "#{@git_url}" "#{@target}"})
       FileUtils.mkdir_p(File.join(@target, @git_prefix))
 
       unless res[:success]
-        KubeBackup.logger.error res[:stderr]
+        OpenshiftBackup.logger.error res[:stderr]
         raise res[:stderr] || "git clone error"
       end
     end
@@ -164,7 +164,7 @@ module KubeBackup
       elsif m = @git_url.match(/https?:\/\/(.+?)\//)
         m[1]
       else
-        KubeBackup.logger.warn "Can't parse git url, skip ssh-keyscan"
+        OpenshiftBackup.logger.warn "Can't parse git url, skip ssh-keyscan"
         nil
       end
 
@@ -174,17 +174,17 @@ module KubeBackup
         if File.exist?(known_hosts)
           content = File.open(known_hosts, 'r:utf-8', &:read)
           if content.split("\n").any? {|l| l.strip.start_with?("#{git_host},", "#{git_host} ") }
-            KubeBackup.logger.info "File #{known_hosts} already contain #{git_host}"
+            OpenshiftBackup.logger.info "File #{known_hosts} already contain #{git_host}"
             return
           end
         end
 
-        res = KubeBackup.cmd(%{ssh-keyscan -H #{git_host} >> #{known_hosts}})
+        res = OpenshiftBackup.cmd(%{ssh-keyscan -H #{git_host} >> #{known_hosts}})
 
         if res[:success]
-          KubeBackup.logger.info "Added #{git_host} to #{known_hosts}"
+          OpenshiftBackup.logger.info "Added #{git_host} to #{known_hosts}"
         else
-          KubeBackup.logger.error res[:stderr]
+          OpenshiftBackup.logger.error res[:stderr]
           raise res[:stderr] || "git clone error"
         end
       end

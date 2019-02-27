@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: kube-backup-ssh-config
-  namespace: kube-backup
+  name: openshift-backup-ssh-config
+  namespace: openshift-backup
 data:
   # generate new key with "ssh-keygen -f ./new_key" (press enter for all questions)
   id_rsa: |

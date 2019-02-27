@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/openshift_backup'
+require_relative '../lib/openshift_backup/cli'
+
+OpenshiftBackup::CLI.new.run

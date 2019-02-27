@@ -1,6 +1,6 @@
-# Kube-backup
+# Openshift-backup
 
-Kubernetes resource state backup to git
+Openshift resource state backup to git
 
 ### Git structure
 
@@ -8,16 +8,23 @@ Kubernetes resource state backup to git
 _global_ - global resources such as Node, ClusterRole, StorageClass
 _grafana_ - grafana configs (when grafana enabled)
 <namespace> - such as kube-system, default, etc...
-  <ResourceType> - folder for each resource type
-    <resource-name.yaml> - file for each resource
+ |_ <ResourceType> - folder for each resource type
+    |_ <resource-name.yaml> - file for each resource
 ```
 
-### Screenshots
-<img src="https://user-images.githubusercontent.com/26019/48974539-12be7600-f097-11e8-91d7-b19c4c8d3e23.png" width="40%"> <img src="https://user-images.githubusercontent.com/26019/48974571-b9a31200-f097-11e8-8f0a-52afc67e4112.png" width="57%">
+### Build Image
+
+**Create a new project in OpenShift**
+
+`$ oc new-project openshift-backup`
+
+**Start a new build in OpenShift using this repo as source**
+
+`$ oc new-build git@github.com:runtastic/openshift-backup.git`
 
 ### Deployment
 
-Yaml manifests are in  [deploy folder](https://github.com/kuberhost/kube-backup/tree/master/deploy).
+Yaml manifests are in [deploy folder](./deploy).
 
 #### Create Deployment Key
 
@@ -26,7 +33,7 @@ Github and gitlab support adding key only for one repository
 * Create repo
 * Generate ssh key `ssh-keygen -f ./new_key`
 * Add new ssh key to repo with write access
-* Save key to [2_config_map.yaml](https://github.com/kuberhost/kube-backup/blob/master/deploy/2_config_map.yaml) (see comments in file)
+* Save key to [1_config_map.yaml](./deploy/1_config_map.yaml) (see comments in file)
 
 #### Testing Deployment
 
@@ -34,23 +41,51 @@ I recommend to run it periodically with kubernetes' CronJob resource, if you wan
 
 ### Commands
 
-* `kube_backup backup` - pull remote git repository, save kubernetes state, make git commit in local repository
-* `kube_backup push` - push changes to remote repository
-* `kube_backup help` - shows help
+* `openshift_backup backup` - pull remote git repository, save kubernetes state, make git commit in local repository
+* `openshift_backup push` - push changes to remote repository
+* `openshift_backup help` - shows help
 
-Docker image by default runs `kube_backup backup && kube_backup push`
+Docker image by default runs `openshift_backup backup && openshift_backup push`
+
+### Allow container to run without random UUID (as root)
+
+`$ oc edit scc anyuid`
+
+And add the service-account you created using [0_service_account.yaml](./deploy/0_service_account.yaml)
+to the list of allowed users
+
+```yaml
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: anyuid provides all features of the restricted SCC
+      but allows users to run with any UID and any GID.
+  name: anyuid
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- MKNOD
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users:
+- system:serviceaccount:openshift-backup:openshift-backup
+```
 
 ### Config
 
 * `GIT_REPO_URL` - remote git URL like `git@github.com:kuberhost/kube-backup.git` (required)
 * `BACKUP_VERBOSE` use 1 to enable verbose logging
-* `TARGET_PATH` - local git repository folder, default `./kube_state`
+* `TARGET_PATH` - local git repository folder, default `./openshift_state`
 * `SKIP_NAMESPACES` - namespaces to exclude, separated by coma (,)
 * `ONLY_NAMESPACES` - whitelist namespaces
 * `GLOBAL_RESOURCES` - override global resources list, default is `node, apiservice, clusterrole, clusterrolebinding, podsecuritypolicy, storageclass, persistentvolume, customresourcedefinition, mutatingwebhookconfiguration, validatingwebhookconfiguration, priorityclass`
 * `EXTRA_GLOBAL_RESOURCES` - use it to add resources to `GLOBAL_RESOURCES` list
 * `SKIP_GLOBAL_RESOURCES` - blacklist global resources
-* `RESOURCES` - default list of namespaces resources, see `KubeBackup::TYPES`
+* `RESOURCES` - default list of namespaces resources, see `OpenshiftBackup::TYPES`
 * `EXTRA_RESOURCES` - use it to add resources to `RESOURCES` list
 * `SKIP_RESOURCES` - exclude resources
 * `SKIP_OBJECTS` - use it to skip individual objects, such as `kube-backup/ConfigMap/kube-backup-ssh-config` (separated by coma, spaces around coma ignored)
@@ -107,4 +142,20 @@ env:
 
 ---
 
-Special thanks to Pieter Lange for [original idea](https://github.com/pieterlange/kube-backup/)
+## Special thanks
+
+Special thanks to Pieter Lange for [original idea](https://github.com/pieterlange/kube-backup/) and
+to Kuberhost for the [ruby implementation](https://github.com/kuberhost/kube-backup).
+
+## Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/runtastic/openshift-backup
+This project is intended to be a safe, welcoming space for collaboration, and
+contributors are expected to adhere to the [code of conduct][cc].
+
+## License
+
+The repo is available as open source under [the terms of the MIT License][mit].
+
+[mit]: https://choosealicense.com/licenses/mit/
+[cc]: ../CODE_OF_CONDUCT.md

@@ -1,9 +1,9 @@
 require 'commander'
 
-class KubeBackup::CLI
+class OpenshiftBackup::CLI
   include Commander::Methods
 
-  DEFAULT_VALUES = {target_path: "./kube_state"}
+  DEFAULT_VALUES = {target_path: "./openshift_state"}
 
   def default_args_from_env(defaults = {})
     args = defaults
@@ -29,7 +29,7 @@ class KubeBackup::CLI
     if ENV['BACKUP_VERBOSE']
       args[:verbose] = ["1", "true", "yes", "ya"].include?(ENV['BACKUP_VERBOSE'].downcase)
       if args[:verbose]
-        KubeBackup.verbose_logger!
+        OpenshiftBackup.verbose_logger!
       end
     end
 
@@ -37,19 +37,19 @@ class KubeBackup::CLI
   end
 
   def run
-    program :name, 'kube_backup'
-    program :version, KubeBackup::VERSION
-    program :description, 'Backup kubernetes resources to git'
+    program :name, 'openshift_backup'
+    program :version, OpenshiftBackup::VERSION
+    program :description, 'Backup OpenShift resources to git'
     program :help_formatter, :compact
     program :help_paging, false
 
     global_option('--verbose', 'Verbose logging (env var BACKUP_VERBOSE)') {
       $verbose = true
-      KubeBackup.verbose_logger!
+      OpenshiftBackup.verbose_logger!
     }
 
     command :backup do |c|
-      c.syntax = 'kube_backup backup [options]'
+      c.syntax = 'openshift_backup backup [options]'
       c.summary = 'Perform backup to local git repo'
       c.description = 'Create backup and save it in local folder'
 
@@ -74,12 +74,12 @@ class KubeBackup::CLI
 
       c.action do |args, options|
         options.default(default_args_from_env(DEFAULT_VALUES))
-        KubeBackup.perform_backup!(options.__hash__)
+        OpenshiftBackup.perform_backup!(options.__hash__)
       end
     end
 
     command :push do |c|
-      c.syntax = 'kube_backup push [options]'
+      c.syntax = 'openshift_backup push [options]'
       c.summary = 'Push changes to remote git repo'
       c.description = 'Commit latest changes and put to remove repository'
 
@@ -94,7 +94,7 @@ class KubeBackup::CLI
       c.action do |args, options|
         options.default(default_args_from_env(DEFAULT_VALUES))
 
-        KubeBackup.push_changes!(options.__hash__)
+        OpenshiftBackup.push_changes!(options.__hash__)
       end
     end
 
